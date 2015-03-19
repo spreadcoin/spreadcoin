@@ -1,4 +1,4 @@
-#if ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
 
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
@@ -10,9 +10,9 @@
 
 using namespace std;
 
-BOOST_AUTO_TEST_SUITE(darksend_tests)
+BOOST_AUTO_TEST_SUITE(privsend_tests)
 
-BOOST_AUTO_TEST_CASE(darksend_sign)
+BOOST_AUTO_TEST_CASE(privsend_sign)
 {
 
     std::string errorMessage = "";
@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_CASE(darksend_sign)
     CPubKey pubkey;
     std::vector<unsigned char> vchSig;
 
-    CDarkSendSigner dss;
+    CPrivSendSigner dss;
     dss.SetKey("XDPugk3QgxVpQ4BubgzKaXhQudtaBnjuos9w6ZTojYx68EipNnt7", errorMessage, key, pubkey);
     BOOST_CHECK(dss.SignMessage("hello", errorMessage, vchSig, key) == true);
     BOOST_CHECK(dss.VerifyMessage(pubkey, vchSig, "hello", errorMessage) == true);
@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(darksend_sign)
 
 BOOST_AUTO_TEST_CASE(set_collateral_address_bad)
 {
-	CDarkSendPool * dsp_ptr = new CDarkSendPool();
+	CPrivSendPool * dsp_ptr = new CPrivSendPool();
 
 	string crappy = "badaddress";
 
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(set_collateral_address_bad)
 
 BOOST_AUTO_TEST_CASE(set_collateral_address_production)
 {
-	CDarkSendPool * dsp_ptr = new CDarkSendPool();
+	CPrivSendPool * dsp_ptr = new CPrivSendPool();
 
 	string prod = "Xq19GqFvajRrEdDHYRKGYjTsQfpV5jyipF";
 
@@ -51,7 +51,7 @@ BOOST_AUTO_TEST_CASE(set_collateral_address_production)
 
 BOOST_AUTO_TEST_CASE(set_collateral_address_testnet)
 {
-	CDarkSendPool * dsp_ptr = new CDarkSendPool();
+	CPrivSendPool * dsp_ptr = new CPrivSendPool();
 
 	string testnet = "mxE2Rp3oYpSEFdsN5TdHWhZvEHm3PJQQVm";
 
@@ -60,10 +60,10 @@ BOOST_AUTO_TEST_CASE(set_collateral_address_testnet)
 }
 
 
-BOOST_AUTO_TEST_CASE(darksend_vote)
+BOOST_AUTO_TEST_CASE(privsend_vote)
 {
     CPubKey key;
-    CMasterNodeVote mnv;
+    CServicenodeVote mnv;
     mnv.Set(key, 1);
     mnv.Vote();
     BOOST_CHECK(mnv.GetVotes() == 2);
@@ -74,4 +74,4 @@ BOOST_AUTO_TEST_CASE(darksend_vote)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES

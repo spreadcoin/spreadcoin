@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Jonas Schnelli, 2013
-# make sure the DarkCoin-Qt.app contains the right plist (including the right version)
+# make sure the SpreadCoin-Qt.app contains the right plist (including the right version)
 # fix made because of serval bugs in Qt mac deployment (https://bugreports.qt-project.org/browse/QTBUG-21267)
 
 from string import Template

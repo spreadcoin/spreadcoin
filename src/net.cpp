@@ -1204,8 +1204,8 @@ static const char *strMainNetDNSSeed[][2] = {
 static const char *strTestNetDNSSeed[][2] = {
     // Spread-FIXME: Add seed nodes
 /*
-    {"darkcoin.io", "testnet-seed.darkcoin.io"},
-    {"darkcoin.qa", "testnet-seed.darkcoin.qa"},
+    {"spreadcoin.io", "testnet-seed.spreadcoin.io"},
+    {"spreadcoin.qa", "testnet-seed.spreadcoin.qa"},
 */
     {NULL, NULL}
 };
@@ -1917,7 +1917,7 @@ void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataSt
     }
 }
 
-void RelayDarkSendElectionEntry(const CTxIn vin, const CService addr, const std::vector<unsigned char> vchSig, const int64 nNow, const CPubKey pubkey, const CPubKey pubkey2, const int count, const int current, const int64 lastUpdated)
+void RelayPrivSendElectionEntry(const CTxIn vin, const CService addr, const std::vector<unsigned char> vchSig, const int64 nNow, const CPubKey pubkey, const CPubKey pubkey2, const int count, const int current, const int64 lastUpdated)
 {
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)
@@ -1926,7 +1926,7 @@ void RelayDarkSendElectionEntry(const CTxIn vin, const CService addr, const std:
     }
 }
 
-void RelayDarkSendElectionEntryPing(const CTxIn vin, const std::vector<unsigned char> vchSig, const int64 nNow, const bool stop)
+void RelayPrivSendElectionEntryPing(const CTxIn vin, const std::vector<unsigned char> vchSig, const int64 nNow, const bool stop)
 {
     LOCK(cs_vNodes);
     BOOST_FOREACH(CNode* pnode, vNodes)

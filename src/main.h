@@ -28,25 +28,25 @@ class CAddress;
 class CInv;
 class CNode;
 class CBitcoinAddress;
-#if ENABLE_DARKSEND_FEATURES
-class CDarkSendPool;
-class CDarkSendSigner;
-class CMasterNode;
-class CMasterNodeVote;
+#if ENABLE_PRIVSEND_FEATURES
+class CPrivSendPool;
+class CPrivSendSigner;
+class CServicenode;
+class CServicenodeVote;
 
-#define MASTERNODE_PAYMENTS_MIN_VOTES 5
-#define MASTERNODE_PAYMENTS_MAX 1
-#define MASTERNODE_PAYMENTS_EXPIRATION 10
-#define START_MASTERNODE_PAYMENTS_TESTNET 1403568776 //Tue, 24 Jun 2014 00:12:56 GMT
-#define START_MASTERNODE_PAYMENTS 1403728576 //Wed, 25 Jun 2014 20:36:16 GMT
+#define SERVICENODE_PAYMENTS_MIN_VOTES 5
+#define SERVICENODE_PAYMENTS_MAX 1
+#define SERVICENODE_PAYMENTS_EXPIRATION 10
+#define START_SERVICENODE_PAYMENTS_TESTNET 1403568776 //Tue, 24 Jun 2014 00:12:56 GMT
+#define START_SERVICENODE_PAYMENTS 1403728576 //Wed, 25 Jun 2014 20:36:16 GMT
 
-#define MASTERNODE_MIN_CONFIRMATIONS           6
-#define MASTERNODE_MIN_MICROSECONDS            5*60*1000*1000
-#define MASTERNODE_PING_SECONDS                30*60
-#define MASTERNODE_EXPIRATION_MICROSECONDS     35*60*1000*1000
-#define MASTERNODE_REMOVAL_MICROSECONDS        35.5*60*1000*1000
+#define SERVICENODE_MIN_CONFIRMATIONS           6
+#define SERVICENODE_MIN_MICROSECONDS            5*60*1000*1000
+#define SERVICENODE_PING_SECONDS                30*60
+#define SERVICENODE_EXPIRATION_MICROSECONDS     35*60*1000*1000
+#define SERVICENODE_REMOVAL_MICROSECONDS        35.5*60*1000*1000
 
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
 struct CBlockIndexWorkComparator;
 
@@ -128,14 +128,14 @@ extern int nAskedForBlocks;    // Nodes sent a getblocks 0
 extern bool fTxIndex;
 extern bool fAddrIndex;
 extern unsigned int nCoinCacheSize;
-#if ENABLE_DARKSEND_FEATURES
-extern CDarkSendPool darkSendPool;
-extern CDarkSendSigner darkSendSigner;
-extern std::vector<CMasterNode> darkSendMasterNodes;
-extern std::vector<CMasterNodeVote> darkSendMasterNodeVotes;
-extern std::string strMasterNodePrivKey;
-extern int64 enforceMasternodePaymentsTime;
-#endif // ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
+extern CPrivSendPool privSendPool;
+extern CPrivSendSigner privSendSigner;
+extern std::vector<CServicenode> privSendServicenodes;
+extern std::vector<CServicenodeVote> privSendServicenodeVotes;
+extern std::string strServicenodePrivKey;
+extern int64 enforceServicenodePaymentsTime;
+#endif // ENABLE_PRIVSEND_FEATURES
 extern CWallet pmainWallet;
 extern std::map<uint256, CBlock*> mapOrphanBlocks;
 
@@ -1312,8 +1312,8 @@ public:
     uint256 ExtractMatches(std::vector<uint256> &vMatch);
 };
 
-#ifdef ENABLE_DARKSEND_FEATURES
-class CMasterNodeVote
+#ifdef ENABLE_PRIVSEND_FEATURES
+class CServicenodeVote
 {   
 public:
     int votes;
@@ -1324,7 +1324,7 @@ public:
     int64 blockHeight;
     static const int CURRENT_VERSION=1;
 
-    CMasterNodeVote() {
+    CServicenodeVote() {
         SetNull();
     }
 
@@ -1383,7 +1383,7 @@ public:
 
 
 };
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
 class CMinerSignature
 {
@@ -1460,8 +1460,8 @@ public:
     uint256 hashWholeBlock; // proof of whole block knowledge
     CMinerSignature MinerSignature; // proof of private key knowledge
 
-#if ENABLE_DARKSEND_FEATURES
-    std::vector<CMasterNodeVote> vmn;
+#if ENABLE_PRIVSEND_FEATURES
+    std::vector<CServicenodeVote> vmn;
 #endif
 
     CBlockHeader()
@@ -1505,9 +1505,9 @@ public:
     }
 
     //special hash includes voting info in the hash
-#ifdef ENABLE_DARKSEND_FEATURES
+#ifdef ENABLE_PRIVSEND_FEATURES
     uint256 GetSpecialHash() const;
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
     uint256 GetHash() const;
 
     int64 GetBlockTime() const
@@ -1743,24 +1743,24 @@ public:
     bool AcceptBlock(CValidationState &state, CDiskBlockPos *dbp = NULL);
 
     
-#if ENABLE_DARKSEND_FEATURES
-    bool MasterNodePaymentsOn() const
+#if ENABLE_PRIVSEND_FEATURES
+    bool ServicenodePaymentsOn() const
     {
         if(fTestNet){
-            if(nTime > START_MASTERNODE_PAYMENTS_TESTNET) return true;
+            if(nTime > START_SERVICENODE_PAYMENTS_TESTNET) return true;
         } else {
-            if(nTime > START_MASTERNODE_PAYMENTS) return true;
+            if(nTime > START_SERVICENODE_PAYMENTS) return true;
         }
         return false;
     }
     
-    bool MasterNodePaymentsEnforcing() const
+    bool ServicenodePaymentsEnforcing() const
     {
-        if(nTime > enforceMasternodePaymentsTime) return true;
+        if(nTime > enforceServicenodePaymentsTime) return true;
 
         return false;
     }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 };
 
 
@@ -2528,8 +2528,8 @@ public:
     )
 };
 
-#if ENABLE_DARKSEND_FEATURES
-class CMasterNode
+#if ENABLE_PRIVSEND_FEATURES
+class CServicenode
 {
 public:
     CService addr;
@@ -2541,7 +2541,7 @@ public:
     int64 now;
     int enabled;
 
-    CMasterNode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std::vector<unsigned char> newSig, int64 newNow, CPubKey newPubkey2)
+    CServicenode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std::vector<unsigned char> newSig, int64 newNow, CPubKey newPubkey2)
     {
         addr = newAddr;
         vin = newVin;
@@ -2587,7 +2587,7 @@ public:
 
 
 
-class CDarkSendSigner
+class CPrivSendSigner
 {
 public:
     bool SetKey(std::string strSecret, std::string& errorMessage, CKey& key, CPubKey& pubkey);
@@ -2597,21 +2597,21 @@ public:
 
 static const int64 POOL_FEE_AMOUNT = 0.025*COIN;
 
-/** Used to keep track of current status of darksend pool
+/** Used to keep track of current status of privsend pool
  */
-class CDarkSendPool
+class CPrivSendPool
 {
 public:
     static const int MIN_PEER_PROTO_VERSION = 70018;
 
-    CTxIn vinMasterNode;
-    CPubKey pubkeyMasterNode;
-    std::vector<unsigned char> vchMasterNodeSignature;
+    CTxIn vinServicenode;
+    CPubKey pubkeyServicenode;
+    std::vector<unsigned char> vchServicenodeSignature;
     CScript collateralPubKey;
     
-    int64 masterNodeSignatureTime;
+    int64 serviceNodeSignatureTime;
 
-    CDarkSendPool()
+    CPrivSendPool()
     {
 
         std::string strAddress = "";  
@@ -2626,11 +2626,11 @@ public:
 
     bool SetCollateralAddress(std::string strAddress);
     bool GetLastValidBlockHash(uint256& hash, int mod=10);
-    int GetCurrentMasterNode(int mod=10);
+    int GetCurrentServicenode(int mod=10);
     void NewBlock();
 };
 
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
 
 #endif
