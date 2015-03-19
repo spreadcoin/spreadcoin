@@ -54,16 +54,16 @@ bool fReindex = false;
 bool fBenchmark = false;
 bool fTxIndex = false;
 bool fAddrIndex = false;
-int RequestedMasterNodeList = 0;
+int RequestedServicenodeList = 0;
 unsigned int nCoinCacheSize = 5000;
 
-#if ENABLE_DARKSEND_FEATURES
-// create DarkSend pools
-CDarkSendPool darkSendPool;
-CDarkSendSigner darkSendSigner;
-std::vector<CMasterNode> darkSendMasterNodes;
-std::vector<CMasterNodeVote> darkSendMasterNodeVotes;
-int64 enforceMasternodePaymentsTime = 4085657524;
+#if ENABLE_PRIVSEND_FEATURES
+// create PrivSend pools
+CPrivSendPool privSendPool;
+CPrivSendSigner privSendSigner;
+std::vector<CServicenode> privSendServicenodes;
+std::vector<CServicenodeVote> privSendServicenodeVotes;
+int64 enforceServicenodePaymentsTime = 4085657524;
 #endif
 
 
@@ -385,7 +385,7 @@ unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans)
 
 bool CTxOut::IsDust() const
 {
-    // DarkCoin: IsDust() detection disabled, allows any valid dust to be relayed.
+    // SpreadCoin: IsDust() detection disabled, allows any valid dust to be relayed.
     // The fees imposed on each dust txo is considered sufficient spam deterrant. 
     return false;
 }
@@ -642,7 +642,7 @@ int64 CTransaction::GetMinFee(unsigned int nBlockSize, bool fAllowFree,
             nMinFee = 0;
     }
 
-    // DarkCoin
+    // SpreadCoin
     // To limit dust spam, add nBaseFee for each output less than DUST_SOFT_LIMIT
     BOOST_FOREACH(const CTxOut& txout, vout)
         if (txout.nValue < DUST_SOFT_LIMIT)
@@ -1733,16 +1733,16 @@ void CBlockHeader::UpdateTime(const CBlockIndex* pindexPrev)
         nBits = GetNextWorkRequired(pindexPrev, this);
 }
 
-#ifdef ENABLE_DARKSEND_FEATURES
+#ifdef ENABLE_PRIVSEND_FEATURES
 uint256 CBlockHeader::GetSpecialHash() const
 {   
-    // calculate additional masternode vote info to include in hash
+    // calculate additional servicenode vote info to include in hash
     uint256 hash = 0;
     uint256 vmnAdditional = 0;
 
     //printf("------------------------------------------------\n");
-    if( (fTestNet && nTime > START_MASTERNODE_PAYMENTS_TESTNET) || (!fTestNet && nTime > START_MASTERNODE_PAYMENTS)) {
-        BOOST_FOREACH(CMasterNodeVote mv1, vmn){
+    if( (fTestNet && nTime > START_SERVICENODE_PAYMENTS_TESTNET) || (!fTestNet && nTime > START_SERVICENODE_PAYMENTS)) {
+        BOOST_FOREACH(CServicenodeVote mv1, vmn){
             uint160 n2 = mv1.pubkey.GetID();
             uint256 n = 0;
             memcpy(&n, &n2, sizeof(n2));
@@ -1760,7 +1760,7 @@ uint256 CBlockHeader::GetSpecialHash() const
     
     return Hash9(BEGIN(nVersion), END(nNonce));
 }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
 const CTxOut &CTransaction::GetOutputFor(const CTxIn& input, CCoinsViewCache& view)
 {
@@ -2548,11 +2548,11 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
     if (vtx.empty() || !vtx[0].IsCoinBase())
         return state.DoS(100, error("CheckBlock() : first tx is not coinbase"));
 
-#if ENABLE_DARKSEND_FEATURES
-    bool MasternodePayments = MasterNodePaymentsOn();
-    bool EnforceMasternodePayments = MasterNodePaymentsEnforcing();
+#if ENABLE_PRIVSEND_FEATURES
+    bool ServicenodePayments = ServicenodePaymentsOn();
+    bool EnforceServicenodePayments = ServicenodePaymentsEnforcing();
 
-    if(MasternodePayments && EnforceMasternodePayments)
+    if(ServicenodePayments && EnforceServicenodePayments)
     {
         LOCK2(cs_main, mempool.cs);
 
@@ -2562,10 +2562,10 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
         int votingRecordsBlockPrev = 0;
         int matchingVoteRecords = 0;
         int badVote = 0;
-        int foundMasterNodePayment = 0;
-        int removedMasterNodePayments = 0;
+        int foundServicenodePayment = 0;
+        int removedServicenodePayments = 0;
 
-        int64 masternodePaymentAmount = vtx[0].GetValueOut()/5;
+        int64 servicenodePaymentAmount = vtx[0].GetValueOut()/5;
         bool fIsInitialDownload = IsInitialBlockDownload();
         
         CBlock blockLast;
@@ -2583,33 +2583,33 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
             pindexPrev = NULL;
         }
 
-        if (!fCheckVotes) EnforceMasternodePayments = false;
+        if (!fCheckVotes) EnforceServicenodePayments = false;
 
         if (pindexPrev != NULL && !fIsInitialDownload){
             {
                 if(blockLast.GetHash() != pindexPrev->GetBlockHash()){
                     printf ("CheckBlock() : blockLast.GetHash() != pindexPrev->GetBlockHash() : %s != %s\n", blockLast.GetHash().ToString().c_str(), pindexPrev->GetBlockHash().ToString().c_str());
-                    if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : blockLast.GetHash() != pindexPrev->GetBlockHash()"));
+                    if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : blockLast.GetHash() != pindexPrev->GetBlockHash()"));
                 }
 
                 printf ("CheckBlock() : nHeight : %d\n", pindexPrev->nHeight);
                 printf ("CheckBlock() : pindexPrev->GetBlockHash() : %s\n", pindexPrev->GetBlockHash().ToString().c_str());
 
                 votingRecordsBlockPrev = blockLast.vmn.size();
-                BOOST_FOREACH(CMasterNodeVote mv1, blockLast.vmn){
-                    if((pindexPrev->nHeight+1) - mv1.GetHeight() > MASTERNODE_PAYMENTS_EXPIRATION){
-                        if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : Vote too old"));
-                    } else if((pindexPrev->nHeight+1) - mv1.GetHeight() == MASTERNODE_PAYMENTS_EXPIRATION){
-                        removedMasterNodePayments++;
-                    } else if(mv1.GetVotes() >= MASTERNODE_PAYMENTS_MIN_VOTES-1 && foundMasterNodePayment < MASTERNODE_PAYMENTS_MAX) {
+                BOOST_FOREACH(CServicenodeVote mv1, blockLast.vmn){
+                    if((pindexPrev->nHeight+1) - mv1.GetHeight() > SERVICENODE_PAYMENTS_EXPIRATION){
+                        if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : Vote too old"));
+                    } else if((pindexPrev->nHeight+1) - mv1.GetHeight() == SERVICENODE_PAYMENTS_EXPIRATION){
+                        removedServicenodePayments++;
+                    } else if(mv1.GetVotes() >= SERVICENODE_PAYMENTS_MIN_VOTES-1 && foundServicenodePayment < SERVICENODE_PAYMENTS_MAX) {
                         for (unsigned int i = 0; i < vtx[0].vout.size(); i++)
-                            if(vtx[0].vout[i].nValue == masternodePaymentAmount && mv1.GetPubKey() == vtx[0].vout[i].scriptPubKey) {
-                                foundMasterNodePayment++;
+                            if(vtx[0].vout[i].nValue == servicenodePaymentAmount && mv1.GetPubKey() == vtx[0].vout[i].scriptPubKey) {
+                                foundServicenodePayment++;
                             } else if(mv1.GetPubKey() == vtx[0].vout[i].scriptPubKey) {
-                                printf(" BAD MASTERNODE PAYMENT DETECTED:  %"PRI64u"\n", vtx[0].vout[i].nValue);
+                                printf(" BAD SERVICENODE PAYMENT DETECTED:  %"PRI64u"\n", vtx[0].vout[i].nValue);
                             }
                     } else {
-                        BOOST_FOREACH(CMasterNodeVote mv2, vmn){
+                        BOOST_FOREACH(CServicenodeVote mv2, vmn){
                             if((mv1.blockHeight == mv2.blockHeight && mv1.GetPubKey() == mv2.GetPubKey())){
                                 matchingVoteRecords++;
                                 if(mv1.GetVotes() != mv2.GetVotes() && mv1.GetVotes()+1 != mv2.GetVotes()) {
@@ -2625,13 +2625,13 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
                 printf ("CheckBlock(): votingRecordsBlockPrev %d\n", votingRecordsBlockPrev);
                 printf ("CheckBlock(): matchingVoteRecords %d\n", matchingVoteRecords);
                 printf ("CheckBlock(): badVote %d\n", badVote);\
-                printf ("CheckBlock(): foundMasterNodePayment %d\n", foundMasterNodePayment);
-                printf ("CheckBlock(): removedMasterNodePayments %d\n", removedMasterNodePayments);
+                printf ("CheckBlock(): foundServicenodePayment %d\n", foundServicenodePayment);
+                printf ("CheckBlock(): removedServicenodePayments %d\n", removedServicenodePayments);
 
 
                 //find new votes, must be for this block height
                 bool foundThisBlock = false;
-                BOOST_FOREACH(CMasterNodeVote mv2, vmn){ 
+                BOOST_FOREACH(CServicenodeVote mv2, vmn){ 
                     {      
                         std::string blockHeight = boost::lexical_cast<std::string>(mv2.blockHeight);
 
@@ -2656,7 +2656,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
                         continue;
                     }
 
-                    BOOST_FOREACH(CMasterNodeVote mv1, blockLast.vmn){
+                    BOOST_FOREACH(CServicenodeVote mv1, blockLast.vmn){
                         if((mv1.blockHeight == mv2.blockHeight && mv1.GetPubKey() == mv2.GetPubKey())){
                             found = true;
                         }
@@ -2664,7 +2664,7 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
                     
                     if(!found){
                         printf("CheckBlock() : pubkey wrong size");
-                        if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : Vote not found in previous block"));
+                        if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : Vote not found in previous block"));
                     }
                 }
             }
@@ -2672,21 +2672,21 @@ bool CBlock::CheckBlock(CValidationState &state, bool fCheckPOW, bool fCheckMerk
             
             if(badVote!=0){
                 printf("CheckBlock() : Bad vote detected");
-                if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : Bad vote detected"));
+                if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : Bad vote detected"));
             }
 
-            if(matchingVoteRecords+foundMasterNodePayment+removedMasterNodePayments!=votingRecordsBlockPrev) {
-                printf("CheckBlock() : Missing masternode votes");
-                if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : Missing masternode votes"));
+            if(matchingVoteRecords+foundServicenodePayment+removedServicenodePayments!=votingRecordsBlockPrev) {
+                printf("CheckBlock() : Missing service node votes");
+                if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : Missing service node votes"));
             }
 
-            if(matchingVoteRecords+foundMasterNodePayment>MASTERNODE_PAYMENTS_EXPIRATION){
+            if(matchingVoteRecords+foundServicenodePayment>SERVICENODE_PAYMENTS_EXPIRATION){
                 printf("CheckBlock() : Too many vote records found");
-                if(EnforceMasternodePayments) return state.DoS(100, error("CheckBlock() : Too many vote records found"));
+                if(EnforceServicenodePayments) return state.DoS(100, error("CheckBlock() : Too many vote records found"));
             }
         }
     }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
     for (unsigned int i = 1; i < vtx.size(); i++)
         if (vtx[i].IsCoinBase())
@@ -2806,7 +2806,7 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp)
 
 bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, unsigned int nRequired, unsigned int nToCheck)
 {
-    // DarkCoin: temporarily disable v2 block lockin until we are ready for v2 transition
+    // SpreadCoin: temporarily disable v2 block lockin until we are ready for v2 transition
     return false;
     unsigned int nFound = 0;
     for (unsigned int i = 0; i < nToCheck && nFound < nRequired && pstart != NULL; i++)
@@ -2883,10 +2883,10 @@ bool ProcessBlock(CValidationState &state, CNode* pfrom, CBlock* pblock, CDiskBl
         mapOrphanBlocksByPrev.erase(hashPrev);
     }
 
-#if ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
     //might need to reset pool
-    darkSendPool.NewBlock();
-#endif // ENABLE_DARKSEND_FEATURES
+    privSendPool.NewBlock();
+#endif // ENABLE_PRIVSEND_FEATURES
 
     printf("ProcessBlock: ACCEPTED\n");
 
@@ -3849,17 +3849,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         pfrom->PushMessage("verack");
         pfrom->ssSend.SetVersion(min(pfrom->nVersion, PROTOCOL_VERSION));
 
-#if ENABLE_DARKSEND_FEATURES
-        if (pfrom->nVersion >= darkSendPool.MIN_PEER_PROTO_VERSION) {
-            if(RequestedMasterNodeList <= 3) {
+#if ENABLE_PRIVSEND_FEATURES
+        if (pfrom->nVersion >= privSendPool.MIN_PEER_PROTO_VERSION) {
+            if(RequestedServicenodeList <= 3) {
                 bool fIsInitialDownload = IsInitialBlockDownload();
                 if(!fIsInitialDownload) {
                     pfrom->PushMessage("dseg");
-                    RequestedMasterNodeList++;
+                    RequestedServicenodeList++;
                 }
             }
         }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
         if (!pfrom->fInbound)
         {
@@ -3919,17 +3919,17 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         vRecv >> howmuch;
         printf("peer=%d says we are misbehaving %d\n", pfrom->id, howmuch);
     }
-#if ENABLE_DARKSEND_FEATURES
-    else if (strCommand == "dseg") { //DarkSend Election Get
-        if (pfrom->nVersion < darkSendPool.MIN_PEER_PROTO_VERSION) {
+#if ENABLE_PRIVSEND_FEATURES
+    else if (strCommand == "dseg") { //PrivSend Election Get
+        if (pfrom->nVersion < privSendPool.MIN_PEER_PROTO_VERSION) {
             return false;
         }
 
-        int count = darkSendMasterNodes.size()-1;
+        int count = privSendServicenodes.size()-1;
         int i = 0;
 
-        BOOST_FOREACH(CMasterNode mn, darkSendMasterNodes) {
-            printf("Sending master node entry - %s \n", mn.addr.ToString().c_str());
+        BOOST_FOREACH(CServicenode mn, privSendServicenodes) {
+            printf("Sending service node entry - %s \n", mn.addr.ToString().c_str());
             mn.Check();
             if(mn.IsEnabled()) {
                 pfrom->PushMessage("dsee", mn.vin, mn.addr, mn.sig, mn.now, mn.pubkey, mn.pubkey2, count, i, mn.lastTimeSeen);
@@ -3938,8 +3938,8 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
     }
 
-    else if (strCommand == "dsee") { //DarkSend Election Entry   
-        if (pfrom->nVersion < darkSendPool.MIN_PEER_PROTO_VERSION) {
+    else if (strCommand == "dsee") { //PrivSend Election Entry   
+        if (pfrom->nVersion < privSendPool.MIN_PEER_PROTO_VERSION) {
             return false;
         }
         bool fIsInitialDownload = IsInitialBlockDownload();
@@ -3979,65 +3979,65 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         }
 
         std::string errorMessage = "";
-        if(!darkSendSigner.VerifyMessage(pubkey, vchSig, strMessage, errorMessage)){
-            printf("dsee - Got bad masternode address signature\n");
+        if(!privSendSigner.VerifyMessage(pubkey, vchSig, strMessage, errorMessage)){
+            printf("dsee - Got bad service node address signature\n");
             pfrom->Misbehaving(100);
             return false;
         }
 
         if((fTestNet && addr.GetPort() != 51678) || (!fTestNet && addr.GetPort() != 41678)) return true;
 
-        //printf("Searching existing masternodes : %s - %s\n", addr.ToString().c_str(),  vin.ToString().c_str());
+        //printf("Searching existing service nodes : %s - %s\n", addr.ToString().c_str(),  vin.ToString().c_str());
         
-        BOOST_FOREACH(CMasterNode& mn, darkSendMasterNodes) {
+        BOOST_FOREACH(CServicenode& mn, privSendServicenodes) {
             //printf(" -- %s\n", mn.vin.ToString().c_str());
 
             if(mn.vin == vin) {
-                if(!mn.UpdatedWithin(MASTERNODE_MIN_MICROSECONDS)){
+                if(!mn.UpdatedWithin(SERVICENODE_MIN_MICROSECONDS)){
                     mn.UpdateLastSeen();
 
                     if(count == -1)
-                        RelayDarkSendElectionEntry(vin, addr, vchSig, sigTime, pubkey, pubkey2, count, current, lastUpdated);
+                        RelayPrivSendElectionEntry(vin, addr, vchSig, sigTime, pubkey, pubkey2, count, current, lastUpdated);
                 }
 
                 return true;
             }
         }
 
-        printf("dsee - Got NEW masternode entry %s\n", addr.ToString().c_str());
+        printf("dsee - Got NEW service node entry %s\n", addr.ToString().c_str());
 
         CValidationState state;
         CTransaction tx = CTransaction();
-        CTxOut vout = CTxOut(999.99*COIN, darkSendPool.collateralPubKey);
+        CTxOut vout = CTxOut(999.99*COIN, privSendPool.collateralPubKey);
         tx.vin.push_back(vin);
         tx.vout.push_back(vout);
         if(tx.AcceptableInputs(state, true)){
-            printf("dsee - Accepted masternode entry %i %i\n", count, current);
+            printf("dsee - Accepted service node entry %i %i\n", count, current);
 
-            if(GetInputAge(vin) < MASTERNODE_MIN_CONFIRMATIONS){
-                printf("dsee - Input must have least %d confirmations\n", MASTERNODE_MIN_CONFIRMATIONS);
+            if(GetInputAge(vin) < SERVICENODE_MIN_CONFIRMATIONS){
+                printf("dsee - Input must have least %d confirmations\n", SERVICENODE_MIN_CONFIRMATIONS);
                 pfrom->Misbehaving(20);
                 return false;
             }
 
             addrman.Add(CAddress(addr), pfrom->addr, 2*60*60);
 
-            CMasterNode mn(addr, vin, pubkey, vchSig, sigTime, pubkey2);
+            CServicenode mn(addr, vin, pubkey, vchSig, sigTime, pubkey2);
             mn.UpdateLastSeen(lastUpdated);
-            darkSendMasterNodes.push_back(mn);
+            privSendServicenodes.push_back(mn);
 
             if(count == -1)
-                RelayDarkSendElectionEntry(vin, addr, vchSig, sigTime, pubkey, pubkey2, count, current, lastUpdated); 
+                RelayPrivSendElectionEntry(vin, addr, vchSig, sigTime, pubkey, pubkey2, count, current, lastUpdated); 
 
         } else {
-            printf("dsee - Rejected masternode entry\n");
+            printf("dsee - Rejected service node entry\n");
             // if caught up on blocks, then do this:
             //pfrom->Misbehaving(20);
         }
     }
 
-    else if (strCommand == "dseep") { //DarkSend Election Entry Ping 
-        if (pfrom->nVersion < darkSendPool.MIN_PEER_PROTO_VERSION) {
+    else if (strCommand == "dseep") { //PrivSend Election Entry Ping 
+        if (pfrom->nVersion < privSendPool.MIN_PEER_PROTO_VERSION) {
             return false;
         }
         bool fIsInitialDownload = IsInitialBlockDownload();
@@ -4063,16 +4063,16 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             return false;
         }
 
-        //printf("Searching existing masternodes : %s - %s\n", addr.ToString().c_str(),  vin.ToString().c_str());
+        //printf("Searching existing service nodes : %s - %s\n", addr.ToString().c_str(),  vin.ToString().c_str());
 
-        BOOST_FOREACH(CMasterNode& mn, darkSendMasterNodes) {
+        BOOST_FOREACH(CServicenode& mn, privSendServicenodes) {
 
             if(mn.vin == vin) {
                 std::string strMessage = mn.addr.ToString() + boost::lexical_cast<std::string>(sigTime) + boost::lexical_cast<std::string>(stop); 
 
                 std::string errorMessage = "";
-                if(!darkSendSigner.VerifyMessage(mn.pubkey2, vchSig, strMessage, errorMessage)){
-                    printf("Got bad masternode address signature\n");
+                if(!privSendSigner.VerifyMessage(mn.pubkey2, vchSig, strMessage, errorMessage)){
+                    printf("Got bad service node address signature\n");
                     //pfrom->Misbehaving(20);
                     return false;
                 }
@@ -4081,18 +4081,18 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
                     if(mn.IsEnabled()){
                         mn.Disable();
                         mn.Check();
-                        RelayDarkSendElectionEntryPing(vin, vchSig, sigTime, stop);
+                        RelayPrivSendElectionEntryPing(vin, vchSig, sigTime, stop);
                     }
                     return true;
-                } else if(!mn.UpdatedWithin(MASTERNODE_MIN_MICROSECONDS)){
+                } else if(!mn.UpdatedWithin(SERVICENODE_MIN_MICROSECONDS)){
                     mn.UpdateLastSeen();
-                    RelayDarkSendElectionEntryPing(vin, vchSig, sigTime, stop);
+                    RelayPrivSendElectionEntryPing(vin, vchSig, sigTime, stop);
                     return true;
                 }
             }
         }
     }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
     else if (strCommand == "addr")
     {
         vector<CAddress> vAddr;
@@ -4950,23 +4950,23 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
     printf("%d\n", scriptPubKeyIn[0]);
 
 
-#if ENABLE_DARKSEND_FEATURES
-    // start masternode payments
+#if ENABLE_PRIVSEND_FEATURES
+    // start service node payments
 
 
-    bool bMasterNodePayment = false;
+    bool bServicenodePayment = false;
 
     // fees to foundation
     if ( fTestNet ){
-        if (GetTimeMicros() > START_MASTERNODE_PAYMENTS_TESTNET ){
-            bMasterNodePayment = true;
+        if (GetTimeMicros() > START_SERVICENODE_PAYMENTS_TESTNET ){
+            bServicenodePayment = true;
         }
     }else{
-        if (GetTimeMicros() > START_MASTERNODE_PAYMENTS){
-            bMasterNodePayment = true;
+        if (GetTimeMicros() > START_SERVICENODE_PAYMENTS){
+            bServicenodePayment = true;
         }
     }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
     
     int64 nFees = 0;
     {
@@ -4974,32 +4974,32 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
         CCoinsViewCache view(*pcoinsTip, true);
         CBlockIndex* pindexPrev = pindexBest;
     
-#if ENABLE_DARKSEND_FEATURES
-        if(bMasterNodePayment) {
-            if(!pblock->MasterNodePaymentsEnforcing()){
-                int winningNode = darkSendPool.GetCurrentMasterNode(1);
+#if ENABLE_PRIVSEND_FEATURES
+        if(bServicenodePayment) {
+            if(!pblock->ServicenodePaymentsEnforcing()){
+                int winningNode = privSendPool.GetCurrentServicenode(1);
                 if(winningNode >= 0){
-                    pblock->payee.SetDestination(darkSendMasterNodes[winningNode].pubkey.GetID());
+                    pblock->payee.SetDestination(privSendServicenodes[winningNode].pubkey.GetID());
                     
                     payments++;
                     txNew.vout.resize(payments);
 
                     //txNew.vout[0].scriptPubKey = scriptPubKeyIn;
-                    txNew.vout[payments-1].scriptPubKey.SetDestination(darkSendMasterNodes[winningNode].pubkey.GetID());
+                    txNew.vout[payments-1].scriptPubKey.SetDestination(privSendServicenodes[winningNode].pubkey.GetID());
                     txNew.vout[payments-1].nValue = 0;
 
-                    printf("Masternode payment to %s\n", txNew.vout[payments-1].scriptPubKey.ToString().c_str());
+                    printf("Service node payment to %s\n", txNew.vout[payments-1].scriptPubKey.ToString().c_str());
                 }
             } else {
                 CBlock blockLast;
                 if(blockLast.ReadFromDisk(pindexPrev)){
-                    BOOST_FOREACH(CMasterNodeVote& mv1, blockLast.vmn){
+                    BOOST_FOREACH(CServicenodeVote& mv1, blockLast.vmn){
                         // vote if you agree with it, if you're the last vote you must vote yes to avoid the greedy voter exploit
                         // i.e: You only vote yes when you're not the one that is going to pay
-                        if(mv1.GetVotes() >= MASTERNODE_PAYMENTS_MIN_VOTES-1){
+                        if(mv1.GetVotes() >= SERVICENODE_PAYMENTS_MIN_VOTES-1){
                             mv1.Vote();
                         } else {
-                            BOOST_FOREACH(CMasterNodeVote& mv2, darkSendMasterNodeVotes) {
+                            BOOST_FOREACH(CServicenodeVote& mv2, privSendServicenodeVotes) {
                                 if((mv1.blockHeight == mv2.blockHeight && mv1.GetPubKey() == mv2.GetPubKey())) {
                                     mv1.Vote();
                                     break;
@@ -5007,9 +5007,9 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                             }
                         }
 
-                        if (((pindexPrev->nHeight+1) - mv1.GetHeight()) >= MASTERNODE_PAYMENTS_EXPIRATION) {
+                        if (((pindexPrev->nHeight+1) - mv1.GetHeight()) >= SERVICENODE_PAYMENTS_EXPIRATION) {
                             // do nothing
-                        } else if( (mv1.GetVotes() >= MASTERNODE_PAYMENTS_MIN_VOTES && pblock->MasterNodePaymentsEnforcing()) && payments <= MASTERNODE_PAYMENTS_MAX) {
+                        } else if( (mv1.GetVotes() >= SERVICENODE_PAYMENTS_MIN_VOTES && pblock->ServicenodePaymentsEnforcing()) && payments <= SERVICENODE_PAYMENTS_MAX) {
                             pblock->payee = mv1.GetPubKey();
                             
                             payments++;
@@ -5019,29 +5019,29 @@ CBlockTemplate* CreateNewBlock(const CScript& scriptPubKeyIn)
                             txNew.vout[payments-1].scriptPubKey = mv1.GetPubKey();
                             txNew.vout[payments-1].nValue = 0;
 
-                            printf("Masternode payment to %s\n", txNew.vout[payments-1].scriptPubKey.ToString().c_str());
-                        } else if (((pindexPrev->nHeight+1) - mv1.GetHeight()) < MASTERNODE_PAYMENTS_EXPIRATION) {
+                            printf("Service node payment to %s\n", txNew.vout[payments-1].scriptPubKey.ToString().c_str());
+                        } else if (((pindexPrev->nHeight+1) - mv1.GetHeight()) < SERVICENODE_PAYMENTS_EXPIRATION) {
                             pblock->vmn.push_back(mv1);
                         }
                     } 
                 }
 
-                int winningNode = darkSendPool.GetCurrentMasterNode(1);
+                int winningNode = privSendPool.GetCurrentServicenode(1);
                 if(winningNode >= 0){
-                    CMasterNodeVote mv;
-                    mv.Set(darkSendMasterNodes[winningNode].pubkey, pindexPrev->nHeight + 1);
+                    CServicenodeVote mv;
+                    mv.Set(privSendServicenodes[winningNode].pubkey, pindexPrev->nHeight + 1);
                     pblock->vmn.push_back(mv);
                 }
             }
         }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
         // Add our coinbase tx as first transaction
         pblock->vtx.push_back(txNew);
         pblocktemplate->vTxFees.push_back(-1); // updated at end
         pblocktemplate->vTxSigOps.push_back(-1); // updated at end
 
-        // end masternode payments
+        // end service node payments
 
 
         // Largest block you're willing to create:
@@ -5594,19 +5594,19 @@ public:
     }
 } instance_of_cmaincleanup;
 
-#if ENABLE_DARKSEND_FEATURES
-/* *** BEGIN DARKSEND MAGIC - DARKCOIN **********
-    Copyright 2014, Darkcoin Developers 
-        eduffield - evan@darkcoin.io
-        InternetApe - kyle@darkcoin.io
+#if ENABLE_PRIVSEND_FEATURES
+/* *** BEGIN PRIVSEND MAGIC - SPREADCOIN **********
+    Copyright 2014, SpreadCoin Developers 
+        eduffield - evan@spreadcoin.io
+        InternetApe - kyle@spreadcoin.io
 */
 
 
-bool CDarkSendPool::SetCollateralAddress(std::string strAddress){
+bool CPrivSendPool::SetCollateralAddress(std::string strAddress){
     CBitcoinAddress address;
     if (!address.SetString(strAddress))
     {
-        printf("CDarkSendPool::SetCollateralAddress - Invalid DarkSend collateral address\n");
+        printf("CPrivSendPool::SetCollateralAddress - Invalid PrivSend collateral address\n");
         return false;
     }
     collateralPubKey.SetDestination(address.Get());
@@ -5614,7 +5614,7 @@ bool CDarkSendPool::SetCollateralAddress(std::string strAddress){
 }
 
 //Get last block hash
-bool CDarkSendPool::GetLastValidBlockHash(uint256& hash, int mod)
+bool CPrivSendPool::GetLastValidBlockHash(uint256& hash, int mod)
 {
     const CBlockIndex *BlockLastSolved = pindexBest;
     const CBlockIndex *BlockReading = pindexBest;
@@ -5634,21 +5634,21 @@ bool CDarkSendPool::GetLastValidBlockHash(uint256& hash, int mod)
     return false;    
 }
 
-void CDarkSendPool::NewBlock()
+void CPrivSendPool::NewBlock()
 {
-    if(fDebug) printf("CDarkSendPool::NewBlock \n");
+    if(fDebug) printf("CPrivSendPool::NewBlock \n");
 
     {    
         LOCK2(cs_main, mempool.cs);
         if(pindexBest != NULL) {
-            int winningNode = darkSendPool.GetCurrentMasterNode(1);
+            int winningNode = privSendPool.GetCurrentServicenode(1);
             if(winningNode >= 0){
-                CMasterNodeVote mv;
-                mv.Set(darkSendMasterNodes[winningNode].pubkey, pindexBest->nHeight + 1);
-                darkSendMasterNodeVotes.push_back(mv);
+                CServicenodeVote mv;
+                mv.Set(privSendServicenodes[winningNode].pubkey, pindexBest->nHeight + 1);
+                privSendServicenodeVotes.push_back(mv);
 
-                if(darkSendMasterNodeVotes.size() > MASTERNODE_PAYMENTS_EXPIRATION){
-                    darkSendMasterNodeVotes.erase(darkSendMasterNodeVotes.begin(), darkSendMasterNodeVotes.end()-MASTERNODE_PAYMENTS_EXPIRATION);
+                if(privSendServicenodeVotes.size() > SERVICENODE_PAYMENTS_EXPIRATION){
+                    privSendServicenodeVotes.erase(privSendServicenodeVotes.begin(), privSendServicenodeVotes.end()-SERVICENODE_PAYMENTS_EXPIRATION);
                 }
             }
         }
@@ -5656,33 +5656,33 @@ void CDarkSendPool::NewBlock()
 }
 
 
-uint256 CMasterNode::CalculateScore(int mod)
+uint256 CServicenode::CalculateScore(int mod)
 {
     if(pindexBest == NULL) return 0;
 
     uint256 n1 = 0;
-    if(!darkSendPool.GetLastValidBlockHash(n1, mod)) return 0;
+    if(!privSendPool.GetLastValidBlockHash(n1, mod)) return 0;
 
     uint256 n2 = Hash9(BEGIN(n1), END(n1));
     uint256 n3 = vin.prevout.hash > n2 ? (vin.prevout.hash - n2) : (n2 - vin.prevout.hash);
     
     /*
-    printf(" -- MasterNode CalculateScore() n1 = %s \n", n1.ToString().c_str());
-    printf(" -- MasterNode CalculateScore() n11 = %u \n", n11);
-    printf(" -- MasterNode CalculateScore() n2 = %s \n", n2.ToString().c_str());
-    printf(" -- MasterNode CalculateScore() vin = %s \n", vin.prevout.hash.ToString().c_str());
-    printf(" -- MasterNode CalculateScore() n3 = %s \n", n3.ToString().c_str());*/
+    printf(" -- Servicenode CalculateScore() n1 = %s \n", n1.ToString().c_str());
+    printf(" -- Servicenode CalculateScore() n11 = %u \n", n11);
+    printf(" -- Servicenode CalculateScore() n2 = %s \n", n2.ToString().c_str());
+    printf(" -- Servicenode CalculateScore() vin = %s \n", vin.prevout.hash.ToString().c_str());
+    printf(" -- Servicenode CalculateScore() n3 = %s \n", n3.ToString().c_str());*/
 
     return n3;
 }
 
-int CDarkSendPool::GetCurrentMasterNode(int mod)
+int CPrivSendPool::GetCurrentServicenode(int mod)
 {
     int i = 0;
     unsigned int score = 0;
     int winner = -1;
 
-    BOOST_FOREACH(CMasterNode mn, darkSendMasterNodes) {
+    BOOST_FOREACH(CServicenode mn, privSendServicenodes) {
         mn.Check();
         if(!mn.IsEnabled()) {
             i++;
@@ -5693,33 +5693,33 @@ int CDarkSendPool::GetCurrentMasterNode(int mod)
         unsigned int n2 = 0;
         memcpy(&n2, &n, sizeof(n2));
 
-        //printf("GetCurrentMasterNode: %d : %s : %u > %u\n", i, mn.addr.ToString().c_str(), n2, score);
+        //printf("GetCurrentServicenode: %d : %s : %u > %u\n", i, mn.addr.ToString().c_str(), n2, score);
         if(n2 > score){
             score = n2;
             winner = i;
         }
         i++;
     }
-    //printf("GetCurrentMasterNode: winner %d\n", winner);
+    //printf("GetCurrentServicenode: winner %d\n", winner);
 
     return winner;
 }
 
-void CMasterNode::Check()
+void CServicenode::Check()
 {
-    if(!UpdatedWithin(MASTERNODE_REMOVAL_MICROSECONDS)){
+    if(!UpdatedWithin(SERVICENODE_REMOVAL_MICROSECONDS)){
         enabled = 4;
         return;
     }
 
-    if(!UpdatedWithin(MASTERNODE_EXPIRATION_MICROSECONDS)){
+    if(!UpdatedWithin(SERVICENODE_EXPIRATION_MICROSECONDS)){
         enabled = 2;
         return;
     }
 
     CValidationState state;
     CTransaction tx = CTransaction();
-    CTxOut vout = CTxOut(999.99*COIN, darkSendPool.collateralPubKey);
+    CTxOut vout = CTxOut(999.99*COIN, privSendPool.collateralPubKey);
     tx.vin.push_back(vin);
     tx.vout.push_back(vout);
 
@@ -5731,7 +5731,7 @@ void CMasterNode::Check()
     enabled = 1; // OK
 }
 
-bool CDarkSendSigner::SetKey(std::string strSecret, std::string& errorMessage, CKey& key, CPubKey& pubkey){
+bool CPrivSendSigner::SetKey(std::string strSecret, std::string& errorMessage, CKey& key, CPubKey& pubkey){
     CBitcoinSecret vchSecret;
     bool fGood = vchSecret.SetString(strSecret);
 
@@ -5746,7 +5746,7 @@ bool CDarkSendSigner::SetKey(std::string strSecret, std::string& errorMessage, C
     return true;
 }
 
-bool CDarkSendSigner::SignMessage(std::string strMessage, std::string& errorMessage, vector<unsigned char>& vchSig, CKey key)
+bool CPrivSendSigner::SignMessage(std::string strMessage, std::string& errorMessage, vector<unsigned char>& vchSig, CKey key)
 {
     CHashWriter ss(SER_GETHASH, 0);
     ss << strMessageMagic;
@@ -5760,7 +5760,7 @@ bool CDarkSendSigner::SignMessage(std::string strMessage, std::string& errorMess
     return true;
 }
 
-bool CDarkSendSigner::VerifyMessage(CPubKey pubkey, vector<unsigned char>& vchSig, std::string strMessage, std::string& errorMessage)
+bool CPrivSendSigner::VerifyMessage(CPubKey pubkey, vector<unsigned char>& vchSig, std::string strMessage, std::string& errorMessage)
 {
     CHashWriter ss(SER_GETHASH, 0);
     ss << strMessageMagic;
@@ -5775,4 +5775,4 @@ bool CDarkSendSigner::VerifyMessage(CPubKey pubkey, vector<unsigned char>& vchSi
     return (pubkey2.GetID() == pubkey.GetID());
 }
 
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES

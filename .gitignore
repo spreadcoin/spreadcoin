@@ -1,7 +1,7 @@
 src/*.exe
-src/darkcoin
-src/darkcoind
-src/test_darkcoin
+src/spreadcoin
+src/spreadcoind
+src/test_spreadcoin
 .*.swp
 *.*~*
 *.bak
@@ -9,17 +9,17 @@ src/test_darkcoin
 *.orig
 *.o
 *.patch
-.darkcoin
+.spreadcoin
 
 # Compilation and Qt preprocessor part
 *.qm
 Makefile
-darkcoin-qt
-DarkCoin-Qt.app
+spreadcoin-qt
+SpreadCoin-Qt.app
 
 # Unit-tests
 Makefile.test
-darkcoin-qt_test
+spreadcoin-qt_test
 
 # Resources cpp
 qrc_*.cpp

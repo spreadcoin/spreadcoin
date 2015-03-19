@@ -338,8 +338,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
             "  \"height\" : height of the next block\n"
             "  \"payee1\" : required payee1\n"
             "  \"votes\" : show vote candidates for this block\n"
-            "  \"masternode_payments\" : if masternode payments are active\n"
-            "  \"masternode_payments_enforcing\" : if masternode payments are being actively enforced by the network\n"
+            "  \"service_node_payments\" : if service node payments are active\n"
+            "  \"service_node_payments_enforcing\" : if service node payments are being actively enforced by the network\n"
             "See https://en.bitcoin.it/wiki/BIP_0022 for full specification.");
 
     std::string strMode = "template";
@@ -449,14 +449,14 @@ Value getblocktemplate(const Array& params, bool fHelp)
         aMutable.push_back("prevblock");
     }
 
-#if ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
     Array aVotes;
-    BOOST_FOREACH(CMasterNodeVote& mv, pblock->vmn){        
+    BOOST_FOREACH(CServicenodeVote& mv, pblock->vmn){        
         CDataStream ssMNV(SER_NETWORK, PROTOCOL_VERSION);
         ssMNV << mv;
         aVotes.push_back(HexStr(ssMNV.begin(), ssMNV.end()));
     }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
     Object result;
     result.push_back(Pair("version", pblock->nVersion));
@@ -473,9 +473,9 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("curtime", (int64_t)pblock->nTime));
     result.push_back(Pair("bits", HexBits(pblock->nBits)));
     result.push_back(Pair("height", (int64_t)(pindexPrev->nHeight+1)));
-#if ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
     result.push_back(Pair("votes", aVotes));
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES
 
 
     if(pblock->payee != CScript()){
@@ -486,10 +486,10 @@ Value getblocktemplate(const Array& params, bool fHelp)
     } else {
         result.push_back(Pair("payee", ""));
     }
-#if ENABLE_DARKSEND_FEATURES
-    result.push_back(Pair("masternode_payments", pblock->MasterNodePaymentsOn()));
-    result.push_back(Pair("enforce_masternode_payments", pblock->MasterNodePaymentsEnforcing()));
-#endif // ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
+    result.push_back(Pair("service_node_payments", pblock->ServicenodePaymentsOn()));
+    result.push_back(Pair("enforce_service_node_payments", pblock->ServicenodePaymentsEnforcing()));
+#endif // ENABLE_PRIVSEND_FEATURES
 
     return result;
 }

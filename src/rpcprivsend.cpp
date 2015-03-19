@@ -3,7 +3,7 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#if ENABLE_DARKSEND_FEATURES
+#if ENABLE_PRIVSEND_FEATURES
 #include "main.h"
 #include "db.h"
 #include "init.h"
@@ -12,7 +12,7 @@
 using namespace json_spirit;
 using namespace std;
 
-Value masternode(const Array& params, bool fHelp)
+Value servicenode(const Array& params, bool fHelp)
 {
     string strCommand;
     if (params.size() >= 1)
@@ -21,7 +21,7 @@ Value masternode(const Array& params, bool fHelp)
     if (fHelp  ||
         (strCommand != "list" && strCommand != "count" && strCommand != "current" && strCommand != "votes" && strCommand != "enforce"))
         throw runtime_error(
-            "masternode list|count|current|votes|enforce> passphrase\n");
+            "service node list|count|current|votes|enforce> passphrase\n");
 
     if (strCommand == "list")
     {
@@ -37,7 +37,7 @@ Value masternode(const Array& params, bool fHelp)
         }
 
         Object obj;
-        BOOST_FOREACH(CMasterNode mn, darkSendMasterNodes) {
+        BOOST_FOREACH(CServicenode mn, privSendServicenodes) {
             mn.Check();   
 
             if(strCommand == "active"){
@@ -61,7 +61,7 @@ Value masternode(const Array& params, bool fHelp)
         return obj;
     }
 
-    if (strCommand == "count") return (int)darkSendMasterNodes.size();
+    if (strCommand == "count") return (int)privSendServicenodes.size();
 
     if (strCommand == "current")
     {
@@ -70,9 +70,9 @@ Value masternode(const Array& params, bool fHelp)
             mod = 1;
         }
 
-        int winner = darkSendPool.GetCurrentMasterNode(mod);
+        int winner = privSendPool.GetCurrentServicenode(mod);
         if(winner >= 0) {
-            return darkSendMasterNodes[winner].addr.ToString().c_str();
+            return privSendServicenodes[winner].addr.ToString().c_str();
         }
 
         return "unknown";
@@ -81,7 +81,7 @@ Value masternode(const Array& params, bool fHelp)
     if (strCommand == "votes")
     {
         Object obj;
-        BOOST_FOREACH(CMasterNodeVote& mv, darkSendMasterNodeVotes) {
+        BOOST_FOREACH(CServicenodeVote& mv, privSendServicenodeVotes) {
             obj.push_back(Pair(boost::lexical_cast<std::string>((int)mv.blockHeight),      mv.GetPubKey().ToString().c_str()));
         }    
         return obj;
@@ -89,10 +89,10 @@ Value masternode(const Array& params, bool fHelp)
 
     if(strCommand == "enforce")
     {
-        return (uint64_t)enforceMasternodePaymentsTime;
+        return (uint64_t)enforceServicenodePaymentsTime;
     }
 
 
     return Value::null;
 }
-#endif // ENABLE_DARKSEND_FEATURES
+#endif // ENABLE_PRIVSEND_FEATURES

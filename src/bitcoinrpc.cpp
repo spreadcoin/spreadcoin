@@ -213,8 +213,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getconnectioncount",     &getconnectioncount,     true,      false,      false },
     { "getpeerinfo",            &getpeerinfo,            true,      false,      false },
     { "addnode",                &addnode,                true,      true,       false },
-#if ENABLE_DARKSEND_FEATURES
-    { "masternode",             &masternode,             false,     false,      true },
+#if ENABLE_PRIVSEND_FEATURES
+    { "servicenode",             &servicenode,             false,     false,      true },
 #endif
     { "getaddednodeinfo",       &getaddednodeinfo,       true,      true,       false },
     { "getdifficulty",          &getdifficulty,          true,      false,      false },
