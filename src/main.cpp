@@ -3929,7 +3929,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         int i = 0;
 
         BOOST_FOREACH(CServicenode mn, privSendServicenodes) {
-            printf("Sending master node entry - %s \n", mn.addr.ToString().c_str());
+            printf("Sending service node entry - %s \n", mn.addr.ToString().c_str());
             mn.Check();
             if(mn.IsEnabled()) {
                 pfrom->PushMessage("dsee", mn.vin, mn.addr, mn.sig, mn.now, mn.pubkey, mn.pubkey2, count, i, mn.lastTimeSeen);
