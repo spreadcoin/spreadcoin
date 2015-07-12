@@ -20,16 +20,27 @@ CXX ?= g++
 USE_UPNP:=-
 USE_IPV6:=1
 
-DEPSDIR?=/usr/local
-BOOST_SUFFIX?=-mgw46-mt-sd-1_52
+BOOST_SUFFIX?=-mgw49-mt-s-1_57
 
 INCLUDEPATHS= \
  -I"$(CURDIR)" \
- -I"$(DEPSDIR)/include"
+ -I/c/deps/boost_1_57_0 \
+ -I/c/deps/db-4.8.30.NC/build_unix \
+ -I/c/deps/openssl/include \
+ -I/c/deps \
+ -I/c/deps/protobuf-2.6.1/src \
+ -I/c/deps/libpng-1.6.16 \
+ -I/c/deps/qrencode-3.4.4
 
 LIBPATHS= \
  -L"$(CURDIR)/leveldb" \
- -L"$(DEPSDIR)/lib"
+ -L/c/deps/db-4.8.30.NC/build_unix \
+ -L/c/deps/openssl \
+ -L/c/deps/miniupnpc \
+ -L/c/deps/protobuf-2.6.1/src/.libs \
+ -L/c/deps/libpng-1.6.16/.libs \
+ -L/c/deps/qrencode-3.4.4/.libs \
+ -L/c/deps/boost_1_57_0
 
 LIBS= \
  -l leveldb \
@@ -42,12 +53,12 @@ LIBS= \
  -l db_cxx \
  -l ssl \
  -l crypto
-
+ 
 DEFS=-D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB -DBOOST_SPIRIT_THREADSAFE
 DEBUGFLAGS=-g
 CFLAGS=-mthreads -O2 -w -Wall -Wextra -Wformat -Wformat-security -Wno-unused-parameter -std=gnu++0x -Wno-literal-suffix $(DEBUGFLAGS) $(DEFS) $(INCLUDEPATHS)
 # enable: ASLR, DEP and large address aware
-LDFLAGS=-Wl,--dynamicbase -Wl,--nxcompat -Wl,--large-address-aware
+LDFLAGS=-Wl,--dynamicbase -Wl,--nxcompat -Wl,--large-address-aware -static-libgcc -static-libstdc++
 
 TESTDEFS = -DTEST_DATA_DIR=$(abspath test/data)
 
@@ -117,8 +128,8 @@ OBJS= \
 
 all: spreadcoind.exe
 
-test check: test_spreadcoin.exe FORCE
-	test_spreadcoin.exe
+#test check: test_spreadcoin.exe FORCE
+#	test_spreadcoin.exe
 
 #
 # LevelDB support
@@ -141,13 +152,13 @@ obj/%.o: %.c $(HEADERS)
 spreadcoind.exe: $(OBJS:obj/%=obj/%)
 	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
 
-TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
+#TESTOBJS := $(patsubst test/%.cpp,obj-test/%.o,$(wildcard test/*.cpp))
 
-obj-test/%.o: test/%.cpp $(HEADERS)
-	$(CXX) -c $(TESTDEFS) $(CFLAGS) -o $@ $<
+#obj-test/%.o: test/%.cpp $(HEADERS)
+#	$(CXX) -c $(TESTDEFS) $(CFLAGS) -o $@ $<
 
-test_spreadcoin.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework$(BOOST_SUFFIX) $(LIBS)
+#test_spreadcoin.exe: $(TESTOBJS) $(filter-out obj/init.o,$(OBJS:obj/%=obj/%))
+#	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(LIBPATHS) $^ -lboost_unit_test_framework$(BOOST_SUFFIX) $(LIBS)
 
 clean:
 	rm -f spreadcoind.exe test_spreadcoin.exe

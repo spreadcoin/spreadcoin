@@ -239,18 +239,18 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/splashscreen.h \
     src/qt/qcustomplot.h \
     src/hashblock.h \
-    src/sph_blake.h \
-    src/sph_skein.h \
-    src/sph_keccak.h \
-    src/sph_jh.h \
-    src/sph_groestl.h \
-    src/sph_bmw.h \
-    src/sph_types.h \
-    src/sph_luffa.h \
-    src/sph_cubehash.h \
-    src/sph_echo.h \
-    src/sph_shavite.h \
-    src/sph_simd.h \
+    src/sphlib/sph_blake.h \
+    src/sphlib/sph_skein.h \
+    src/sphlib/sph_keccak.h \
+    src/sphlib/sph_jh.h \
+    src/sphlib/sph_groestl.h \
+    src/sphlib/sph_bmw.h \
+    src/sphlib/sph_types.h \
+    src/sphlib/sph_luffa.h \
+    src/sphlib/sph_cubehash.h \
+    src/sphlib/sph_echo.h \
+    src/sphlib/sph_shavite.h \
+    src/sphlib/sph_simd.h \
     src/endiannes.h \
     src/qt/blockexplorer.h \
     src/ecdsa.h \
@@ -261,7 +261,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/vanitygenwork.h \
     src/qt/vanity_avl.h \
     src/qt/vanity_pattern.h \
-    src/qt/vanity_util.h
+    src/qt/vanity_util.h \
 
 SOURCES += src/qt/bitcoin.cpp \
     src/qt/bitcoingui.cpp \
@@ -334,17 +334,17 @@ SOURCES += src/qt/bitcoin.cpp \
     src/txdb.cpp \
     src/qt/splashscreen.cpp \
     src/qt/qcustomplot.cpp \
-    src/blake.c \
-    src/bmw.c \
-    src/groestl.c \
-    src/jh.c \
-    src/keccak.c \
-    src/skein.c \
-    src/luffa.c \
-    src/cubehash.c \
-    src/shavite.c \
-    src/echo.c \
-    src/simd.c \
+    src/sphlib/blake.c \
+    src/sphlib/bmw.c \
+    src/sphlib/groestl.c \
+    src/sphlib/jh.c \
+    src/sphlib/keccak.c \
+    src/sphlib/skein.c \
+    src/sphlib/luffa.c \
+    src/sphlib/cubehash.c \
+    src/sphlib/shavite.c \
+    src/sphlib/echo.c \
+    src/sphlib/simd.c \
     src/qt/blockexplorer.cpp \
     src/ecdsa.cpp \
     src/qt/miningpage.cpp \
@@ -353,7 +353,8 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/vanitygenpage.cpp \
     src/qt/vanitygenwork.cpp \
     src/qt/vanity_pattern.cpp \
-    src/qt/vanity_util.cpp
+    src/qt/vanity_util.cpp \
+    src/sphlib/aes_helper.c
 
 
 RESOURCES += src/qt/bitcoin.qrc
