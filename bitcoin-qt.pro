@@ -261,7 +261,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/vanitygenwork.h \
     src/qt/vanity_avl.h \
     src/qt/vanity_pattern.h \
-    src/qt/vanity_util.h \
+    src/qt/vanity_util.h
 
 SOURCES += src/qt/bitcoin.cpp \
     src/qt/bitcoingui.cpp \
@@ -355,7 +355,6 @@ SOURCES += src/qt/bitcoin.cpp \
     src/qt/vanity_pattern.cpp \
     src/qt/vanity_util.cpp \
     src/sphlib/aes_helper.c
-
 
 RESOURCES += src/qt/bitcoin.qrc
 
