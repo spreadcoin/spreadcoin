@@ -23,6 +23,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QKeyEvent>
+
+#include <QDebug>
 
 VanityGenPage::VanityGenPage(QWidget *parent, BitcoinGUI *_gui):
     QWidget(parent),
@@ -52,6 +55,9 @@ VanityGenPage::VanityGenPage(QWidget *parent, BitcoinGUI *_gui):
 
     connect(ui->tableView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), this, SLOT(tableViewClicked(QItemSelection,QItemSelection)));
     connect(ui->tableView, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(customMenuRequested(QPoint)));
+
+    ui->tableView->setFocusPolicy(Qt::StrongFocus);
+    ui->tableView->installEventFilter(this);
 
     VanityGenKeysChecked = 0;
     VanityGenHashrate = 0;//"0.0";
@@ -249,6 +255,12 @@ void VanityGenPage::lockWallet(){
 
         gui->setEncryptionStatus(walletModel->getEncryptionStatus());
     }
+}
+
+void VanityGenPage::keyPressEvent(QKeyEvent *event)
+{
+  if(event->key() == Qt::Key_Delete && !VanityGenRunning)
+      deleteRows();
 }
 
 void VanityGenPage::customMenuRequested(QPoint pos)

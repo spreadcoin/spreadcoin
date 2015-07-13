@@ -41,6 +41,7 @@ public:
 
     bool buttonUnlockState;
 
+    void keyPressEvent(QKeyEvent *event);
 public slots:
     void startThread();
     void stopThread();
