@@ -6,6 +6,8 @@
 #include "main.h"
 #include "bitcoinrpc.h"
 
+#include <QDebug>
+
 using namespace json_spirit;
 using namespace std;
 
