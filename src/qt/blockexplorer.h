@@ -5,7 +5,6 @@
 
 #include "uint256.h"
 #include "base58.h"
-#undef loop
 
 namespace Ui {
 class BlockExplorer;

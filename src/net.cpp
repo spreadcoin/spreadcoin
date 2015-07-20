@@ -139,7 +139,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer)
 bool RecvLine(SOCKET hSocket, string& strLine)
 {
     strLine = "";
-    loop
+    for (;;)
     {
         char c;
         int nBytes = recv(hSocket, &c, 1, 0);
@@ -311,7 +311,7 @@ bool GetMyExternalIP2(const CService& addrConnect, const char* pszGet, const cha
     {
         if (strLine.empty()) // HTTP response is separated from headers by blank line
         {
-            loop
+            for (;;)
             {
                 if (!RecvLine(hSocket, strLine))
                 {
@@ -756,7 +756,7 @@ static list<CNode*> vNodesDisconnected;
 void ThreadSocketHandler()
 {
     unsigned int nPrevNodeCount = 0;
-    loop
+    for (;;)
     {
         //
         // Disconnect nodes
@@ -1316,7 +1316,7 @@ void ThreadOpenConnections()
 
     // Initiate network connections
     int64 nStart = GetTime();
-    loop
+    for (;;)
     {
         ProcessOneShot();
 
@@ -1367,7 +1367,7 @@ void ThreadOpenConnections()
         int64 nANow = GetAdjustedTime();
 
         int nTries = 0;
-        loop
+        for (;;)
         {
             // use an nUnkBias between 10 (no outgoing connections) and 90 (8 outgoing connections)
             CAddress addr = addrman.Select(10 + min(nOutbound,8)*10);

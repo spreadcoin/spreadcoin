@@ -4913,7 +4913,7 @@ void static SpreadCoinMiner(CWallet *pwallet)
     // Each thread has its own key and counter
     CReserveKey reservekey(pwallet);
 
-    try { loop {
+    try { for (;;) {
        while (vNodes.empty() && !fTestNet)
             MilliSleep(1000);
 
@@ -4957,11 +4957,11 @@ void static SpreadCoinMiner(CWallet *pwallet)
         //
         int64 nStart = GetTime();
         uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-        loop
+        for (;;)
         {
             unsigned int nHashesDone = 0;
 
-            loop
+            for (;;)
             {
                 if ((pblock->nNonce & NONCE_MASK) == 0)
                 {

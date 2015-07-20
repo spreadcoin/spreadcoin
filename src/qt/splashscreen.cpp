@@ -2,7 +2,6 @@
 #include "clientversion.h"
 #include "util.h"
 
-#undef loop /* ugh, remove this when the #define loop is gone from util.h */
 #include <QApplication>
 
 #include <QDesktopWidget>
