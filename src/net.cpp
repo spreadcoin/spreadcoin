@@ -1326,7 +1326,7 @@ void ThreadOpenConnections()
         boost::this_thread::interruption_point();
 
         // Add seed nodes if IRC isn't working
-        if (addrman.size()==0 && (GetTime() - nStart > 60) && !fTestNet)
+        if (addrman.size()<=2 && (GetTime() - nStart > 20) && !fTestNet)
         {
             std::vector<CAddress> vAdd;
             for (unsigned int i = 0; i < ARRAYLEN(pnSeed); i++)
