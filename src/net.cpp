@@ -1120,7 +1120,7 @@ void ThreadMapPort()
         string strDesc = "SpreadCoin " + FormatFullVersion();
 
         try {
-            loop {
+            for (;;) {
 #ifndef UPNPDISCOVER_SUCCESS
                 /* miniupnpc 1.5 */
                 r = UPNP_AddPortMapping(urls.controlURL, data.first.servicetype,
