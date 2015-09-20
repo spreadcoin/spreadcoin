@@ -63,13 +63,9 @@
 
 #include <iostream>
 
-const QString BitcoinGUI::DEFAULT_WALLET = "~Default";
+int MENU_OFFSET;
 
-#ifdef Q_OS_MAC
-    const int MENU_OFFSET = 0;
-#else
-    const int MENU_OFFSET = 18;
-#endif
+const QString BitcoinGUI::DEFAULT_WALLET = "~Default";
 
 BitcoinGUI::BitcoinGUI(QWidget *parent) :
     QMainWindow(parent),
@@ -274,17 +270,17 @@ void BitcoinGUI::createCategories()
 
 
     overviewCategory->setStyleSheet("QToolButton{ padding-top:43px; background: url(:/icons/home) top center no-repeat; background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefbf6, stop: 1 #d7d5d0); border: 1px solid #98958f; border-radius: 10px;}"
-                                "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/home) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
-                                "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/home2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
+                                    "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/home) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
+                                    "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/home2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
     walletCategory->setStyleSheet("QToolButton{ padding-top:43px; background: url(:/icons/wallet) top center no-repeat; background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefbf6, stop: 1 #d7d5d0); border: 1px solid #98958f; border-radius: 10px;}"
-                              "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/wallet) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
-                              "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/wallet2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
+                                  "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/wallet) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
+                                  "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/wallet2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
     miningCategory->setStyleSheet("QToolButton{ padding-top:43px; background: url(:/icons/mining) top center no-repeat; background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefbf6, stop: 1 #d7d5d0); border: 1px solid #98958f; border-radius: 10px;}"
-                              "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/mining) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
-                              "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/mining2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
+                                  "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/mining) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
+                                  "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/mining2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
     settingsCategory->setStyleSheet("QToolButton{ padding-top:43px; background: url(:/icons/settings) top center no-repeat; background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #fefbf6, stop: 1 #d7d5d0); border: 1px solid #98958f; border-radius: 10px;}"
-                                "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/settings) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
-                                "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/settings2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
+                                    "QToolButton:hover,QToolButton:checked{ padding-top:43px; background: url(:/icons/settings) top center no-repeat; background-color: #FFFFFF; border: 1px solid #98958f; border-radius: 10px;}"
+                                    "QToolButton:checked{color:#000000; font:bold; background: url(:/icons/settings2) top center no-repeat; background-color: #C3C0BB; border: 1px solid #3F3F3F;}");
 }
 
 void BitcoinGUI::createActions()
@@ -387,7 +383,7 @@ void BitcoinGUI::createActions()
     walletButtonLayout->addWidget(receiveCoinsButton);
 
     QFrame *line2a = new QFrame(walletButtonContainer);
-     line2a->setFixedWidth(2);
+    line2a->setFixedWidth(2);
     line2a->setFixedHeight(30);
     line2a->setFrameShape(QFrame::VLine);
     line2a->setFrameShadow(QFrame::Sunken);
@@ -397,7 +393,7 @@ void BitcoinGUI::createActions()
     walletButtonLayout->addWidget(addressBookButton);
 
     QFrame *line2b = new QFrame(walletButtonContainer);
-     line2b->setFixedWidth(2);
+    line2b->setFixedWidth(2);
     line2b->setFixedHeight(30);
     line2b->setFrameShape(QFrame::VLine);
     line2b->setFrameShadow(QFrame::Sunken);
@@ -519,6 +515,8 @@ void BitcoinGUI::createMenuBar()
     // Get the main window's menu bar on other platforms
     appMenuBar = menuBar();
 #endif
+
+    appMenuBar->isNativeMenuBar() ? MENU_OFFSET = 0 : MENU_OFFSET = 18;
 
     appMenuBar->raise();
 
@@ -660,16 +658,16 @@ void BitcoinGUI::removeAllWallets()
 
 void BitcoinGUI::setWalletActionsEnabled(bool enabled)
 {
-//    //overviewAction->setEnabled(enabled);
-//    //sendCoinsAction->setEnabled(enabled);
-//    //receiveCoinsAction->setEnabled(enabled);
-//    //historyAction->setEnabled(enabled);
-//    encryptWalletAction->setEnabled(enabled);
-//    //backupWalletAction->setEnabled(enabled);
-//    changePassphraseAction->setEnabled(enabled);
-//    signMessageAction->setEnabled(enabled);
-//    verifyMessageAction->setEnabled(enabled);
-//    //addressBookAction->setEnabled(enabled);
+    //    //overviewAction->setEnabled(enabled);
+    //    //sendCoinsAction->setEnabled(enabled);
+    //    //receiveCoinsAction->setEnabled(enabled);
+    //    //historyAction->setEnabled(enabled);
+    //    encryptWalletAction->setEnabled(enabled);
+    //    //backupWalletAction->setEnabled(enabled);
+    //    changePassphraseAction->setEnabled(enabled);
+    //    signMessageAction->setEnabled(enabled);
+    //    verifyMessageAction->setEnabled(enabled);
+    //    //addressBookAction->setEnabled(enabled);
 }
 
 void BitcoinGUI::createTrayIcon()
