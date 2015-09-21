@@ -259,6 +259,9 @@ void VanityGenPage::lockWallet(){
 
 void VanityGenPage::keyPressEvent(QKeyEvent *event)
 {
+     if(event->key() == Qt::Key_Return && ui->lineEdit->hasFocus()){
+         addPatternClicked();
+     }
   if(event->key() == Qt::Key_Delete && !VanityGenRunning)
       deleteRows();
 }
