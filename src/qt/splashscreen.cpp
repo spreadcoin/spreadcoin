@@ -52,6 +52,17 @@ SplashScreen::SplashScreen(QWidget *parent) :
     splashImage->setPixmap(newPixmap);
     splashImage->move(screenWidth/2-567/2,50);
 
+
+    QFont smallFont; smallFont.setPixelSize(12);
+
+    versionLabel = new QLabel(this);
+    versionLabel->setStyleSheet("QLabel { color: #3C3C3B; }");
+    versionLabel->setFont(smallFont);
+    versionLabel->setText(QString::fromStdString(FormatFullVersion()).split("-")[0]);
+    versionLabel->setFixedSize(1000,30);
+    versionLabel->move(screenWidth/2-108,220);
+
+
     QFont largeFont; largeFont.setPixelSize(20);
 
     label = new QLabel(this);

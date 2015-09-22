@@ -91,6 +91,8 @@ private:
     qint64 currentUnconfirmedBalance;
     qint64 currentImmatureBalance;
 
+    QLabel *versionLabel;
+
     QLabel *labelBalance;
     QLabel *labelUnconfirmedBalance;
     QLabel *labelImmatureBalance;

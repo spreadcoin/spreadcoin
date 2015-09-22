@@ -54,6 +54,7 @@ GuiHeader::GuiHeader(QWidget *parent) :
     QFont largeFont; largeFont.setPixelSize(20);
     QFont boldFont; boldFont.setBold(true);
     QFont font;   font.setFamily(":/font/montserrat-bold");       font.setPixelSize(16);       font.setStyleStrategy(QFont::PreferAntialias);       font.setBold(true);
+    QFont fontV;   fontV.setFamily(":/font/montserrat-bold");       fontV.setPixelSize(9);       fontV.setStyleStrategy(QFont::PreferAntialias);       fontV.setBold(false);
 
     this->setFixedSize(1000,120);
 
@@ -69,8 +70,16 @@ GuiHeader::GuiHeader(QWidget *parent) :
     spreadCoinLogo = new ClickableLabel(this);
     spreadCoinLogo->setPixmap( QPixmap(":/icons/gui_header_logo"));
     spreadCoinLogo->setContentsMargins(0,0,0,0);
-    spreadCoinLogo->move(15,35);
+    spreadCoinLogo->move(15,35-10);
     spreadCoinLogo->adjustSize();
+
+    versionLabel = new QLabel(this);
+    versionLabel->setFont(fontV);
+    versionLabel->move(0,90);
+    versionLabel->setFixedWidth(95);
+    versionLabel->setAlignment(Qt::AlignCenter);
+    versionLabel->setStyleSheet("color: #FFFFFF");
+    //versionLabel->setText("v 0.9.15.5");
 
     QWidget *separatorLine = new QWidget(this);
     separatorLine->setFixedSize(2,115);
@@ -293,6 +302,11 @@ void GuiHeader::setBalance(qint64 balance, qint64 unconfirmedBalance, qint64 imm
 void GuiHeader::setClientModel(ClientModel *model)
 {
     this->clientModel = model;
+
+    if(model)
+    {
+        versionLabel->setText(model->formatFullVersion().split("-")[0]);
+    }
 }
 
 void GuiHeader::setWalletModel(WalletModel *model)
@@ -312,6 +326,7 @@ void GuiHeader::setWalletModel(WalletModel *model)
         setBalance(model->getBalance(), model->getUnconfirmedBalance(), model->getImmatureBalance());
         connect(model, SIGNAL(balanceChanged(qint64, qint64, qint64)), this, SLOT(setBalance(qint64, qint64, qint64)));
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
+
     }
 
     // update the display unit, to not use the default ("BTC")

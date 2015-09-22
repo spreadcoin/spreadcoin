@@ -24,6 +24,7 @@ public:
 
     QLabel *splashImage;
     QPixmap newPixmap;
+    QLabel *versionLabel;
     QLabel *label;
 
 
