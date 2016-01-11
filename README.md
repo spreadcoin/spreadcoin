@@ -1,7 +1,7 @@
 SpreadCoin integration/staging tree
 ================================
 
-http://spreadcoin.net
+http://spreadcoin.info
 
 Copyright (c) 2009-2014 The developers
 
