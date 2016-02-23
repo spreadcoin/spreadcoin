@@ -3,7 +3,7 @@ SpreadCoin integration/staging tree
 
 http://spreadcoin.info
 
-Copyright (c) 2009-2014 The developers
+Copyright (c) 2009-2015 The developers
 
 What is SpreadCoin?
 ----------------
