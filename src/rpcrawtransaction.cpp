@@ -51,7 +51,7 @@ vector<unsigned char> ParseHexO(const Object& o, string strKey)
     return ParseHexV(find_value(o, strKey), strKey);
 }
 
-void ScriptPubKeyToJSON(const CScript& scriptPubKey, Object& out)
+void ScriptPubKeyToJSON(cript& scriptPubKey, Object& out)
 {
     txnouttype type;
     vector<CTxDestination> addresses;
@@ -239,7 +239,9 @@ Value listunspent(const Array& params, bool fHelp)
             CTxDestination address;
             if (ExtractDestination(pk, address))
             {
-                const CScriptID& hash = boost::get<const CScriptID&>(address);
+                //const CScriptID& hash = boost::get<const CScriptID&>(address);
+                //needed for proper boost 1.58 configuration. wallet: fix boost::get usage with boost 1.58
+                const CScriptID& hash = boost::get<CScriptID>(address);
                 CScript redeemScript;
                 if (pwalletMain->GetCScript(hash, redeemScript))
                     entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
