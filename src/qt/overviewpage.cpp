@@ -16,7 +16,7 @@ OverviewPage::OverviewPage(QWidget *parent, BitcoinGUI *_gui):
 
     //#a13469 #6c3d94
 
-    ui->labelIntroText->setStyleSheet(".QLabel{color:#000000; border: 1px solid black;background-color: #C3C0BB; padding:10px;}");
+    /*ui->labelIntroText->setStyleSheet(".QLabel{color:#000000; border: 1px solid black;background-color: #C3C0BB; padding:10px;}");
     ui->labelIntroText->setText("<b>Welcome to SpreadCoin, "
                                 "the project that is building a network where any possible application "
                                 "or service can be run in a decentralised manner.</b>");
@@ -24,7 +24,7 @@ OverviewPage::OverviewPage(QWidget *parent, BitcoinGUI *_gui):
     ui->labelIntroText->setFixedHeight(50);
 #else
     ui->labelIntroText->setFixedHeight(60);
-#endif
+#endif*/
 
     ClickableLabel *JumpSelector = new ClickableLabel();//Label(this);
     ClickableLabel *JumpSelector2 = new ClickableLabel();
