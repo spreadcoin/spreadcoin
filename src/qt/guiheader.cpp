@@ -374,7 +374,7 @@ void GuiHeader::updateDisplayUnit()
                 agoString = QString::number(ago/86400)+" d ago";
             }
             if(ago >=31536000){
-                agoString = QString::number(ago/86400)+" y ago";
+                agoString = QString::number(ago/31536000)+" y ago";
             }
 
             recentLabel[i][2]->setText(agoString);
